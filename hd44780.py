@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import RPi.GPIO as GPIO
+from time import sleep
 
 class HD44780:
 
@@ -31,6 +32,7 @@ class HD44780:
     def cmd(self, bits, char_mode=False):
         """ Send command to LCD """
 
+        sleep(0.001)
         bits=bin(bits)[2:].zfill(8)
 
         GPIO.output(self.pin_rs, char_mode)
