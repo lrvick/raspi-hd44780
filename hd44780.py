@@ -2,107 +2,65 @@
 
 import RPi.GPIO as GPIO
 
-PIN_RS = 24
-PIN_E = 23
-PIN_DB4 = 4
-PIN_DB5 = 17
-PIN_DB6 = 21
-PIN_DB7 = 22
+class HD44780:
 
-def main():
+    def __init__(self, pin_rs=None, pin_e=None, pins_db=None):
 
-    GPIO.setmode(GPIO.BCM) # use BCM I/O names
-    GPIO.setup(PIN_E, GPIO.OUT)
-    GPIO.setup(PIN_RS, GPIO.OUT)
-    GPIO.setup(PIN_DB4, GPIO.OUT)
-    GPIO.setup(PIN_DB5, GPIO.OUT)
-    GPIO.setup(PIN_DB6, GPIO.OUT)
-    GPIO.setup(PIN_DB7, GPIO.OUT)
-    lcd_cmd(0x33) # $33 8-bit mode
-    lcd_cmd(0x32) # $32 8-bit mode
-    lcd_cmd(0x28) # $28 8-bit mode
-    lcd_cmd(0x0C) # $0C 8-bit mode
-    lcd_cmd(0x06) # $06 8-bit mode
-    lcd_cmd(0x01) # $01 8-bit mode
-    lcd_string("I'm Raspberry Pi")
-    lcd_cmd(0xC0) # next line
-    lcd_string("  Take a byte!")
+        self.pin_rs = pin_rs or 24
+        self.pin_e = pin_e or 23
+        self.pins_db = pins_db or [4, 17, 21, 22]
 
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.pin_e, GPIO.OUT)
+        GPIO.setup(self.pin_rs, GPIO.OUT)
+        for pin in self.pins_db:
+            GPIO.setup(pin, GPIO.OUT)
 
-def lcd_cmd(bits):
-   bits=bin(bits)
-   bits=bits[2:]
-   zeros=(8-len(bits))*"0"
-   bits=zeros+bits
-   GPIO.output(PIN_RS, False)
-   GPIO.output(PIN_DB4, False)
-   GPIO.output(PIN_DB5, False)
-   GPIO.output(PIN_DB6, False)
-   GPIO.output(PIN_DB7, False)
-   if bits[0]=="1" :
-      GPIO.output(PIN_DB7, True)
-   if bits[1]=="1" :
-      GPIO.output(PIN_DB6, True)
-   if bits[2]=="1" :
-      GPIO.output(PIN_DB5, True)
-   if bits[3]=="1" :
-      GPIO.output(PIN_DB4, True)
-   GPIO.output(PIN_E, True)
-   GPIO.output(PIN_E, False)
-   GPIO.output(PIN_DB4, False)
-   GPIO.output(PIN_DB5, False)
-   GPIO.output(PIN_DB6, False)
-   GPIO.output(PIN_DB7, False)
-   if bits[4]=="1" :
-      GPIO.output(PIN_DB7, True)
-   if bits[5]=="1" :
-      GPIO.output(PIN_DB6, True)
-   if bits[6]=="1" :
-      GPIO.output(PIN_DB5, True)
-   if bits[7]=="1" :
-      GPIO.output(PIN_DB4, True)
-   GPIO.output(PIN_E, True)
-   GPIO.output(PIN_E, False)
+        self.cmd(0x33) # $33 8-bit mode
+        self.cmd(0x32) # $32 8-bit mode
+        self.cmd(0x28) # $28 8-bit mode
+        self.cmd(0x0C) # $0C 8-bit mode
+        self.cmd(0x06) # $06 8-bit mode
+        self.cmd(0x01) # $01 8-bit mode
 
-def lcd_string(message):
-   msg_len = len(message)
-   for i in range(msg_len):
-      lcd_char(message[i])
+    def cmd(self, bits, char_mode=False):
+        """ Send command to LCD """
 
-def lcd_char(bits):
-   bits=bin(ord(bits))
-   bits=bits[2:]
-   zeros=(8-len(bits))*"0"
-   bits=zeros+bits
-   GPIO.output(PIN_RS, True)
-   GPIO.output(PIN_DB4, False)
-   GPIO.output(PIN_DB5, False)
-   GPIO.output(PIN_DB6, False)
-   GPIO.output(PIN_DB7, False)
-   if bits[0]=="1" :
-      GPIO.output(PIN_DB7, True)
-   if bits[1]=="1" :
-      GPIO.output(PIN_DB6, True)
-   if bits[2]=="1" :
-      GPIO.output(PIN_DB5, True)
-   if bits[3]=="1" :
-      GPIO.output(PIN_DB4, True)
-   GPIO.output(PIN_E, True)
-   GPIO.output(PIN_E, False)
-   GPIO.output(PIN_DB4, False)
-   GPIO.output(PIN_DB5, False)
-   GPIO.output(PIN_DB6, False)
-   GPIO.output(PIN_DB7, False)
-   if bits[4]=="1" :
-      GPIO.output(PIN_DB7, True)
-   if bits[5]=="1" :
-      GPIO.output(PIN_DB6, True)
-   if bits[6]=="1" :
-      GPIO.output(PIN_DB5, True)
-   if bits[7]=="1" :
-      GPIO.output(PIN_DB4, True)
-   GPIO.output(PIN_E, True)
-   GPIO.output(PIN_E, False)
+        bits=bin(bits)[2:].zfill(8)
+
+        GPIO.output(self.pin_rs, char_mode)
+
+        for pin in self.pins_db:
+            GPIO.output(pin, False)
+
+        for i in range(4):
+            if bits[i] == "1":
+                GPIO.output(self.pins_db[::-1][i], True)
+
+        GPIO.output(self.pin_e, True)
+        GPIO.output(self.pin_e, False)
+
+        for pin in self.pins_db:
+            GPIO.output(pin, False)
+
+        for i in range(4,8):
+            if bits[i] == "1":
+                GPIO.output(self.pins_db[::-1][i-4], True)
+
+        GPIO.output(self.pin_e, True)
+        GPIO.output(self.pin_e, False)
+
+    def message(self, text):
+        """ Send string to LCD. Newline wraps to second line"""
+
+        for char in text:
+            if char == '\n':
+                self.cmd(0xC0) # next line
+            else:
+                self.cmd(ord(char),True)
 
 if __name__ == '__main__':
-   main()
+
+    lcd = HD44780()
+
+    lcd.message("I'm Raspberry Pi\n  Take a byte!")
