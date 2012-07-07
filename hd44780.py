@@ -16,6 +16,11 @@ class HD44780:
         for pin in self.pins_db:
             GPIO.setup(pin, GPIO.OUT)
 
+        self.clear()
+
+    def clear(self):
+        """ Blank / Reset LCD """
+
         self.cmd(0x33) # $33 8-bit mode
         self.cmd(0x32) # $32 8-bit mode
         self.cmd(0x28) # $28 8-bit mode
