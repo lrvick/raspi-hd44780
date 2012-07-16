@@ -5,11 +5,11 @@ from time import sleep
 
 class HD44780:
 
-    def __init__(self, pin_rs=None, pin_e=None, pins_db=None):
+    def __init__(self, pin_rs=24, pin_e=23, pins_db=[4, 17, 21, 22]):
 
-        self.pin_rs = pin_rs or 24
-        self.pin_e = pin_e or 23
-        self.pins_db = pins_db or [4, 17, 21, 22]
+        self.pin_rs = pin_rs
+        self.pin_e = pin_e
+        self.pins_db = pins_db
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.pin_e, GPIO.OUT)
